@@ -21,7 +21,6 @@ for template in input["zabbix_export"]["templates"]:
     for item in template["items"]:
         if item["type"] == "SNMP_AGENT":
             item.update({"snmp_oid": "get[" + item["snmp_oid"] + "]"})
-            print(item["snmp_oid"])
 
     for discovery in template["discovery_rules"]:
         item_prototypes = discovery["item_prototypes"]
@@ -30,3 +29,5 @@ for template in input["zabbix_export"]["templates"]:
                 prototype.update({"snmp_oid": "get[" + prototype["snmp_oid"] +"]"})
 
 print(input)
+with open("converted_template.yml", "w") as output:
+    yaml.safe_dump(input,output,)
