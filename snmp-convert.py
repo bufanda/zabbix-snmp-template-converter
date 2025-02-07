@@ -4,10 +4,12 @@
 #
 #####
 
-import yaml
+import ruamel.yaml as YAML
+
+yaml = YAML.YAML()
 
 with open("template.yml", "r") as inputf:
-    input = yaml.safe_load(inputf)
+    input = yaml.load(inputf)
 
 for item in input["zabbix_export"]:
     if item == "version":
@@ -61,4 +63,4 @@ for template in input["zabbix_export"]["templates"]:
 
 
 with open("converted_template.yml", "w") as output:
-    yaml.safe_dump(input,output,)
+    yaml.dump(input,output)
