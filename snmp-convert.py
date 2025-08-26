@@ -12,7 +12,7 @@ import sys
 yaml = YAML.YAML()
 
 ARG_PARSER = argparse.ArgumentParser(description="default parser")
-ARG_PARSER.add_argument("-t", "--template", type=str, required=True, help="Esported Template to convert" )
+ARG_PARSER.add_argument("-t", "--template", type=str, required=True, help="Exported Template to convert" )
 ARG_PARSER.add_argument("-o", "--output", type=str, required=False, help="Output file name")
 ARG_PARSER.add_argument("-d", "--dryrun", action="store_true", required=False, help="Only output to shell do not safe file")
 
