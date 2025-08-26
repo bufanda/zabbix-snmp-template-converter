@@ -166,3 +166,4 @@ logs/
 *.sqlite3-journal
 *.bak
 *.yml
+*.yaml
