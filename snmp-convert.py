@@ -39,17 +39,47 @@ for item in input["zabbix_export"]:
             print("Not uspported")
             exit(-1)
 
+template_new_name : str
+
 for template in input["zabbix_export"]["templates"]:
 
     old_name = template["name"]
     template["name"] = f"{template['name']} asynchron"
+    template_new_name = template["name"]
     template["template"] = f"{template['template']} asynchron"
     template["uuid"] = uuid.uuid4().hex
     if "items" in template:
         for item in template["items"]:
             if item["type"] == "SNMP_AGENT":
-                if "get[" not in item["snmp_oid"]:
+                if "get[" not in item["snmp_oid"] and "discovery[" not in item["snmp_oid"]:
                     item.update({"snmp_oid": "get[" + item["snmp_oid"] + "]"})
+                if "discovery[" in item["snmp_oid"]:
+                    macros = []
+                    oids = []
+                    preprocessing = []
+                    oids_macros = item["snmp_oid"][len("discovery["):-1]
+                    oids_macros = str.split(oids_macros, ",")
+
+                    for index,value in enumerate(oids_macros):
+                        if index%2 == 0:
+                            macros.append(value)
+                        else:
+                            oids.append(value)
+                    item["snmp_oid"] = "walk[" + str.join(",", oids) + "]"
+                    pp = {
+                        "type": "SNMP_WALK_TO_JSON",
+                        "parameters": []
+                    }
+                    for index,value in enumerate(macros):
+                        pp["parameters"].append(value)
+                        pp["parameters"].append(oids[index])
+                        pp["parameters"].append('0')
+                    preprocessing.append(pp)
+                    if "preprocessing" in item:
+                        item["preprocessing"] = item["preprocessing"] + preprocessing
+                    else:
+                        item.update({"preprocessing": preprocessing})
+
             if "triggers" in item:
                 for triggers in item["triggers"]:
                     if old_name in triggers["expression"]:
@@ -125,6 +155,12 @@ for template in input["zabbix_export"]["templates"]:
     if "valuemaps" in template:
         for valuemap in template["valuemaps"]:
             valuemap["uuid"] = uuid.uuid4().hex
+
+if "graphs" in input["zabbix_export"]:
+    for graph in input["zabbix_export"]["graphs"]:
+        graph["uuid"]= uuid.uuid4().hex
+        for item in graph["graph_items"]:
+            item["item"]["host"] = item["item"]["host"].replace(old_name, template_new_name)
 
 if not dryrun:
     if not output_file:
