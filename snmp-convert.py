@@ -4,13 +4,14 @@
 #
 #####
 
-import yaml # as YAML
+import ruamel.yaml as YAML
 import uuid
 
-# yaml = YAML.YAML()
+yaml = YAML.YAML()
 
 with open("template.yml", "r") as inputf:
-    input = yaml.safe_load(inputf)
+    # input = yaml.safe_load(inputf)
+    input = yaml.load(inputf)
 
 
 for item in input["zabbix_export"]:
@@ -27,23 +28,34 @@ for template in input["zabbix_export"]["templates"]:
     template["name"] = f"{template["name"]} asynchron"
     template["template"] = f"{template["template"]} asynchron"
     template["uuid"] = uuid.uuid4().hex
-
-    for item in template["items"]:
-        if item["type"] == "SNMP_AGENT":
-            if "get[" not in item["snmp_oid"]:
-                item.update({"snmp_oid": "get[" + item["snmp_oid"] + "]"})
+    if "items" in template:
+        for item in template["items"]:
+            if item["type"] == "SNMP_AGENT":
+                if "get[" not in item["snmp_oid"]:
+                    item.update({"snmp_oid": "get[" + item["snmp_oid"] + "]"})
             if "triggers" in item:
                 for triggers in item["triggers"]:
                     if old_name in triggers["expression"]:
                         triggers["expression"] =  triggers["expression"].replace(old_name, template["template"])
                     triggers["uuid"] = uuid.uuid4().hex
-        item["uuid"] = uuid.uuid4().hex
+                if "dependencies" in triggers:
+                    for dependency in triggers["dependencies"]:
+                        # dependency["uuid"] = uuid.uuid4().hex
+                        if old_name in dependency["expression"]:
+                            dependency["expression"] =  dependency["expression"].replace(old_name, template["template"])
+
+            item["uuid"] = uuid.uuid4().hex
 
     if "triggers" in template:
         for triggers in template["triggers"]:
             if old_name in triggers["expression"]:
                 triggers["expression"] =  triggers["expression"].replace(old_name, template["template"])
             triggers["uuid"] = uuid.uuid4().hex
+            if "dependencies" in triggers:
+                for dependency in triggers["dependencies"]:
+                    # dependency["uuid"] = uuid.uuid4().hex
+                    if old_name in dependency["expression"]:
+                        dependency["expression"] =  dependency["expression"].replace(old_name, template["template"])
 
     if "discovery_rules" in template:
         for discovery in template["discovery_rules"]:
@@ -54,7 +66,7 @@ for template in input["zabbix_export"]["templates"]:
                         prototype.update({"snmp_oid": "get[" + prototype["snmp_oid"] +"]"})
                 prototype["uuid"] = uuid.uuid4().hex
             discovery["uuid"] = uuid.uuid4().hex
-        
+
         for rule in template["discovery_rules"]:
             macros = []
             oids = []
@@ -88,7 +100,10 @@ for template in input["zabbix_export"]["templates"]:
                     if old_name in triggers["expression"]:
                         triggers["expression"] =  triggers["expression"].replace(old_name, template["template"])
 
+    if "valuemaps" in template:
+        for valuemap in template["valuemaps"]:
+            valuemap["uuid"] = uuid.uuid4().hex
 
 with open("converted_template.yml", "w") as output:
     yaml.dump(input,output)
-    
+
